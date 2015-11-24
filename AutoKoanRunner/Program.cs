@@ -10,12 +10,10 @@ namespace AutoKoanRunner
 {
 	class Program
 	{
-		private static readonly string koansRunner = @"..\..\..\KoanRunner\bin\debug\koanrunner.exe";
-		private static DateTime _LastChange;
-		private static Analysis _Prior = new Analysis();
-		//private static string _PriorFailed;
-		//private static int _Attempts;
-		static void Main(string[] args)
+	    private const string KoansRunner = @"..\..\..\KoanRunner\bin\debug\koanrunner.exe";
+	    private static DateTime _lastChange;
+		private static Analysis _prior = new Analysis();
+		static void Main()
 		{
 			if (Array.TrueForAll(KoanSource.Sources, source => Directory.Exists(source.SourceFolder)) == false)
 			{
@@ -58,19 +56,17 @@ namespace AutoKoanRunner
 		}
 		private static void ResetLastRunData()
 		{
-			_LastChange = DateTime.MinValue;
-			_Prior = new Analysis();
-			//_PriorFailed = String.Empty;
-			//_Attempts = 0;
+			_lastChange = DateTime.MinValue;
+			_prior = new Analysis();
 		}
 		private static void StartRunner(object sender, FileSystemEventArgs e)
 		{
 			if (e != null)
 			{
-				DateTime timestamp = File.GetLastWriteTime(e.FullPath);
-				if (_LastChange.ToString() == timestamp.ToString())// Use string version to eliminate second save by VS a fraction of a second later
+				var timestamp = File.GetLastWriteTime(e.FullPath);
+				if (_lastChange.ToString() == timestamp.ToString())// Use string version to eliminate second save by VS a fraction of a second later
 					return;
-				_LastChange = timestamp;
+				_lastChange = timestamp;
 			}
 			KoanSource source = Array.Find(KoanSource.Sources, s => e.FullPath.EndsWith(s.Extension));
 			BuildProject(source);
@@ -79,7 +75,7 @@ namespace AutoKoanRunner
 		private static bool BuildProject(KoanSource koans)
 		{
 			Console.WriteLine("Building...");
-			using (Process build = new Process())
+			using (var build = new Process())
 			{
 				build.StartInfo.FileName = "devenv";
 				build.StartInfo.Arguments = String.Format(@"/build Debug /project {0} ..\..\..\DotNetKoans.sln", koans.ProjectName);
@@ -94,9 +90,9 @@ namespace AutoKoanRunner
 			if (File.Exists(koans.AssemblyPath))
 			{
 				Console.WriteLine("Checking Koans...");
-				using (Process launch = new Process())
+				using (var launch = new Process())
 				{
-					launch.StartInfo.FileName = koansRunner;
+					launch.StartInfo.FileName = KoansRunner;
 					launch.StartInfo.Arguments = koans.AssemblyPath;
 					launch.StartInfo.RedirectStandardOutput = true;
 					launch.StartInfo.UseShellExecute = false;
@@ -111,12 +107,12 @@ namespace AutoKoanRunner
 		private static void EchoResult(string output, string projectName)
 		{
 			string[] lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-			Master master = new Master(projectName);
-			_Prior = master.Analyze(lines, _Prior);
-			PrintLastActions(_Prior);
-			PrintMastersComments(_Prior);
-			PrintAnswersYouSeek(lines, _Prior);
-			PrintFinalWords(_Prior);
+			var master = new Master(projectName);
+			_prior = master.Analyze(lines, _prior);
+			PrintLastActions(_prior);
+			PrintMastersComments(_prior);
+			PrintAnswersYouSeek(lines, _prior);
+			PrintFinalWords(_prior);
 		}
 		private static void PrintLastActions(Analysis analysis)
 		{
